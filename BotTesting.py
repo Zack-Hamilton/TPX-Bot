@@ -187,9 +187,28 @@ async def on_message(message):
             await message.channel.send("Yeah, screw tables (╯°□°）╯︵ ┻━┻");
 
         elif (message.content.startswith("t.menu")):
-            await message.channel.send('Here is a menu of the the commands I am currently able to run:');
-            await message.channel.send('```json\n1)    Say Hi! ("t.hello")\n2)    Check my info ("t.data")\n3)    Ask me a question ("t.ask")\n4)    Echo! ("t.echo")\n5)    Play guess the number! ("t.guess")\n5)    Play Rock Paper Scissors! ("t.roshambo")\n```');
-
+            if(message.content == "t.menu"):
+                await message.channel.send('Here is a menu of the the commands I am currently able to run:');
+                await message.channel.send('```json\n1)    Say Hi! ("t.hello")\n2)    Check my info ("t.data")\n3)    Ask me a question ("t.ask")\n4)    Echo! ("t.echo")\n5)    Play guess the number! ("t.guess")\n5)    Play Rock Paper Scissors! ("t.roshambo")\n7)    Flip the table! ("t.tableflip")\n```');
+            else:
+                commandlookup = open("Descriptions.txt","r");
+                line_string = commandlookup.readline();
+                userinput = message.content[7:]
+                flagfound = False;
+                while (line_string != ""):
+                    if(userinput.find(line_string.rstrip("\n")) != -1):
+                        description = commandlookup.readline();
+                        description = description.rstrip("\n");
+                        line_string = commandlookup.readline();
+                        flagfound = True;
+                    else:
+                        if (flagfound != True):
+                            description = "I'm sorry, but I couldn't find such a command. Could you please try again?"
+                        line_string = commandlookup.readline();
+                        line_string = commandlookup.readline();
+                await message.channel.send(description);
+                commandlookup.close();
+                
         elif (message.content.startswith("t.")):
             await message.channel.send("Um, sorry, but I couldn't quite understand that. Could you repeat that once more?");
     
