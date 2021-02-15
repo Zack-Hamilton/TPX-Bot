@@ -4,6 +4,7 @@ import random;
 
 intents = discord.Intents.default();
 intents.members = True;
+intents.reactions = True;
 TPX = discord.Client(intents=intents);
 
 Tokenread = open("Token.txt","r");
@@ -109,11 +110,11 @@ async def on_message(message):
                 else:
                     status = True;
 
-            wintext = "That's correct! Hooray! :tada:\nYou took " + str(guess) + " number of tries."
+            wintext = "That's correct! Hooray! :tada:\nYou took about " + str(guess) + " number of tries."
             await message.channel.send(wintext);
             await message.channel.send("Thanks for playing!");
 
-        elif (message.content.startswith("t.roshambo2")):
+        elif (message.content.startswith("t.roshambo")):
             playcount = 0;
             computercount = 0;
             await message.channel.send("Let's play Rock :rock: Paper :newspaper: Scissors :scissors:! Choose your item.");
@@ -182,8 +183,11 @@ async def on_message(message):
                 await message.channel.send("Looks like I win this time! That was fun! :smile:");
             await message.channel.send("Thanks for playing!");
 
-        elif (message.content.startswith("t.commands")):
-            await message.channel.send('Here is a list of the the commands I am currently able to run:');
+        elif (message.content.startswith("t.tableflip")):
+            await message.channel.send("Yeah, screw tables (╯°□°）╯︵ ┻━┻");
+
+        elif (message.content.startswith("t.menu")):
+            await message.channel.send('Here is a menu of the the commands I am currently able to run:');
             await message.channel.send('```json\n1)    Say Hi! ("t.hello")\n2)    Check my info ("t.data")\n3)    Ask me a question ("t.ask")\n4)    Echo! ("t.echo")\n5)    Play guess the number! ("t.guess")\n5)    Play Rock Paper Scissors! ("t.roshambo")\n```');
 
         elif (message.content.startswith("t.")):
