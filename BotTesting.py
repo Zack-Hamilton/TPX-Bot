@@ -1,6 +1,7 @@
 import discord;
 import traceback;
 import random;
+import asyncio;
 
 intents = discord.Intents.default();
 intents.members = True;
@@ -185,6 +186,14 @@ async def on_message(message):
 
         elif (message.content.startswith("t.tableflip")):
             await message.channel.send("Yeah, screw tables (╯°□°）╯︵ ┻━┻");
+
+        elif (message.content.startswith("t.spoiler")):
+            await message.channel.send("Spoiler in:");
+            await asyncio.sleep(10);
+            await message.channel.send("3,2,1...");
+            await asyncio.sleep(10);
+            await message.channel.send("NEVER GONNA GIVE YOU UP, NEVER GONNA LET YOU DOW-");
+
 
         elif (message.content.startswith("t.menu")):
             if(message.content == "t.menu"):
