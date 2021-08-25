@@ -2,6 +2,8 @@ import discord;
 import traceback;
 import random;
 import asyncio;
+import pickle;
+import os;
 
 intents = discord.Intents.default();
 intents.members = True;
@@ -11,216 +13,113 @@ TPX = discord.Client(intents=intents);
 Tokenread = open("Token.txt","r");
 Token = Tokenread.readline();
 
+#---------------------------------------------------------------Variables------------------------------------------------------------------------------------------------------------------------------------------------
+
+class Menu:
+    Content = "";
+    Available = False;
+
+#----------------------------------------------------------------Modules-------------------------------------------------------------------------------------------------------------------------------------------------
+#Add Command
+def MenuFile(Text,YorN):
+    #Variables
+    global eof;
+    AddRecord = Menu();
+
+    #Data to be stored
+    AddRecord.Content = Text;
+    AddRecord.Available = YorN;
+
+
+    #File write
+    Write = open("MainMenu.dat","ab");
+    pickle.dump(AddRecord,Write);
+    Write.close();
+
+#Print Menu
+def MainMenu(message):
+    #Variables
+    TempRecord = Menu();
+    global MessageArr;
+    Loop = True;
+    PrevCheck = "";
+    Count = 0;
+    
+    #File read
+    Read = open("MainMenu.dat","rb");
+    
+    #Line count
+    while Loop:
+        try:
+            TempRecord = pickle.load(Read);
+            Count = Count + 1;
+        except Exception as e:
+            Loop = False;
+
+    #Read contents
+    MessageArr = [""] * Count;
+    eof = Read.tell();
+    Read.seek(0);
+    Count = 0
+    while (Read.tell() != eof):
+        TempRecord = pickle.load(Read);
+        if (TempRecord.Available == True):
+            MessageArr[Count] = "- " + TempRecord.Content;
+        Count = Count + 1;
+    Read.close();
+
+#-----------------------------------------------------------------Code---------------------------------------------------------------------------------------------------------------------------------------------------
 @TPX.event
 async def on_ready():
-    await TPX.change_presence(status=discord.Status.dnd, activity=discord.Activity(type=discord.ActivityType.playing, name="nothing special, just working on some code again."));
+    await TPX.change_presence(status=discord.Status.dnd, activity=discord.Activity(type=discord.ActivityType.playing, name="Reworking bot"));
     print("Successfully loaded");
 
 @TPX.event
 async def on_message(message):
     try:
+        #Prevent bot echo
         if message.author == TPX.user:
             return;
 
-        if (message.content.startswith("t.hello")): #message.content[:2] also works
-            await message.channel.send("Hello there, {.author}! :wave: Do you require my assistance?".format(message));
-
-        elif (message.content.startswith("t.data")):
-            await message.channel.send("I'm TPX bot. I was created on the 9th of January, 2021, and am programmed for the sole purpose of assisting you and other users in their needs. If you have any queries, don't hesitate to ask! ^^");
-
-        elif (message.content.startswith("t.ask")):
-            if (message.content[5:] == ""):
-                await message.channel.send("What would you like me to ask? :eyes:")
-            else:
-                count = 0;
-                RandomReply = open("BotRandomReplies.txt","r");
-                PrestoredReply = open("BotPrestoredReplies.txt","r");
-                line_string = PrestoredReply.readline();
-                prestored = False;
-
-                while (line_string != "") and (prestored == False):
-                    if (message.content.find(line_string.rstrip("\n")) != -1):
-                        line_string = PrestoredReply.readline();
-                        reply = line_string.rstrip("\n");
-                        response = reply;
-                        prestored = True;
-                    else:
-                        prestored = False;
-                        line_string = PrestoredReply.readline();
-                    line_string = PrestoredReply.readline();
-            
-                if (prestored == False):
-                    count = 0;
-                    line_string = RandomReply.readline();
-                    arraycount = line_string.rstrip("\n"); #Keep array count 1 more than actual count of items in file
-                    Replyarray = [""] * int(arraycount);
-                
-                    while (line_string != ""):
-                        line_string = RandomReply.readline();
-                        reply = line_string.rstrip("\n");
-                        Replyarray[count] = reply;
-                        count = count + 1;
-
-                    response = random.choice(Replyarray);
-            
-                text = "So you asked..." + message.content[5:] + "? " + response;
-            
-                await message.channel.send(text.format(message));
-                RandomReply.close();
-                PrestoredReply.close();
-
-        elif (message.content.startswith("t.echo")):
-            if (message.content[6:] == ""):
-                await message.channel.send("ECHO, ECHo, ECho, Echo, echo, ech...")
-            else:
-                await message.channel.send(message.content[6:]);
-
-        elif (message.content.startswith("t.guess")):
-
-            guess = 1;
-            randomnumber = random.randint(0,100);
-            status = False;
-            await message.channel.send("I'm thinking of a number between 1 and 100. Can you guess what it is?");
-
-            while (status == False):
-                error = True;
+#----------Admin Commands
+        #Add Menu Item
+        if (message.channel.name == "admin-centre-for-tpx"):
+            if (message.content == "t.menuedit"):
+                await message.channel.send("Enter Command Name:");
                 channel = message.channel;
                 def check(m):
                     return m.content != ''  and m.channel == channel;
-
-                while (error == True):
-                    while True:
-                        try:
-                            temp = await TPX.wait_for('message',check=lambda m: m.author == message.author and m.channel == message.channel);
-                            usernumber = int(temp.content);
-                            if (usernumber < 100) or (usernumber < 0):
-                                error = False;
-                            else:
-                                await message.channel.send("Sorry, but your guess is out of range. Please try again.");
-                                error = True;
-                            break;
-                        except Exception as e:
-                            await message.channel.send("Sorry, but that's not a number. Please try again.");
-       
-                if (usernumber != randomnumber):
-                    if (usernumber > randomnumber):
-                        await message.channel.send("That's too high! Try again.");
+                ComName = (await TPX.wait_for('message',check=lambda m: m.author == message.author and m.channel == message.channel)).content;
+            
+                await message.channel.send("Admin Only?(Y/N):");
+                Check = False;
+                while not Check:
+                    ComAvail = await TPX.wait_for('message',check=lambda m: m.author == message.author and m.channel == message.channel);
+                    if (ComAvail.content == "Y") or (ComAvail.content == "N"):
+                        Check = True;
                     else:
-                        await message.channel.send("That's too low! Try again.");
-                    guess = guess + 1;
+                        await message.channel.send("Invalid Response.");
+                if (ComAvail.content == "N"):
+                    Available = True;
                 else:
-                    status = True;
+                    Available = False;
+                MenuFile(ComName,Available);
 
-            wintext = "That's correct! Hooray! :tada:\nYou took about " + str(guess) + " number of tries."
-            await message.channel.send(wintext);
-            await message.channel.send("Thanks for playing!");
+#----------Regular Commands
+        #Print Menu
+        elif (message.content == "t.menu"):
+            MainMenu(message);
+            await message.channel.send("*Here's a list of available functions:*");
+            Loop = True;
+            Count = 0;
+            while Loop:
+                try:
+                    await message.channel.send(MessageArr[Count]);
+                    Count = Count + 1;
+                except Exception as e:
+                    Loop = False;
 
-        elif (message.content.startswith("t.roshambo")):
-            playcount = 0;
-            computercount = 0;
-            await message.channel.send("Let's play Rock :rock: Paper :newspaper: Scissors :scissors:! Choose your item.");
-
-            while (playcount != 3) and (computercount != 3):
-                playchoice = 0;
-                item = 0;
-                while (playchoice != 1) and (playchoice != 2) and (playchoice != 3) or (item != 1):
-                    item = 0;
-                    channel = message.channel;
-                    def check(m):
-                        return m.content != ''  and m.channel == channel;
-                    temp = await TPX.wait_for('message',check=lambda m: m.author == message.author and m.channel == message.channel);
-
-                    if (temp.content.find("rock") != -1) or (temp.content.find("Rock") != -1) or (temp.content.find("ROCK") != -1) or (temp.content.find("🪨") != -1):
-                        playchoice = 1;
-                        item = item + 1;
-                    if (temp.content.find("paper") != -1) or (temp.content.find("Paper") != -1) or (temp.content.find("📰") != -1) or (temp.content.find("🗞️") != -1) or (temp.content.find("PAPER") != -1):
-                        playchoice = 2;
-                        item = item + 1;
-                    if (temp.content.find("scissors") != -1) or (temp.content.find("Scissors") != -1) or (temp.content.find("✂") != -1) or (temp.content.find("SCISSORS") != -1):
-                        playchoice = 3;
-                        item = item + 1;
-                    
-                    if (item == 0):
-                        await message.channel.send("Um, I'm afraid that's not a valid selection. Please try again.");
-                    elif (item > 1):
-                        await message.channel.send("You're only supposed to select one item, silly. Try again.");
-
-                computerchoice = random.randint(1,3);
-                if (computerchoice == 1):
-                    selection = ":rock:";
-                elif (computerchoice == 2):
-                    selection = ":newspaper:";
-                else:
-                    selection = ":scissors:";
-                chosetext = "I choose " + selection;
-                await message.channel.send(chosetext);
-
-                if (playchoice == computerchoice):
-                    await message.channel.send("Daww, it's a draw.");
-                elif (playchoice == 1) and (computerchoice == 3):
-                    await message.channel.send("Oh hey, you won! You get a point!");
-                    playcount = playcount + 1;
-                elif (playchoice == 2) and (computerchoice == 1):
-                    await message.channel.send("Oh hey, you won! You get a point!");
-                    playcount = playcount + 1;
-                elif (playchoice == 3) and (computerchoice == 2):
-                    await message.channel.send("Oh hey, you won! You get a point!");
-                    playcount = playcount + 1;
-                elif (playchoice == 1) and (computerchoice == 2):
-                    await message.channel.send("Looks like I won! I get a point!");
-                    computercount = computercount + 1;
-                elif (playchoice == 2) and (computerchoice == 3):
-                    await message.channel.send("Looks like I won! I get a point!");
-                    computercount = computercount + 1;
-                elif (playchoice == 3) and (computerchoice == 1):
-                    await message.channel.send("Looks like I won! I get a point!");
-                    computercount = computercount + 1;
-                scoretext = "So far, you have " + str(playcount) + " points, while I have " + str(computercount) + " points.";
-                await message.channel.send(scoretext);
-
-            if (playcount == 3):
-                await message.channel.send("You won the round! Congratulations! :tada:");
-            if (computercount == 3):
-                await message.channel.send("Looks like I win this time! That was fun! :smile:");
-            await message.channel.send("Thanks for playing!");
-
-        elif (message.content.startswith("t.tableflip")):
-            await message.channel.send("Yeah, screw tables (╯°□°）╯︵ ┻━┻");
-
-        elif (message.content.startswith("t.spoiler")):
-            await message.channel.send("Spoiler in:");
-            await asyncio.sleep(10);
-            await message.channel.send("3,2,1...");
-            await asyncio.sleep(10);
-            await message.channel.send("NEVER GONNA GIVE YOU UP, NEVER GONNA LET YOU DOW-");
-
-
-        elif (message.content.startswith("t.menu")):
-            if(message.content == "t.menu"):
-                await message.channel.send('Here is a menu of the the commands I am currently able to run:');
-                await message.channel.send('```json\n1)    Say Hi! ("t.hello")\n2)    Check my info ("t.data")\n3)    Ask me a question ("t.ask")\n4)    Echo! ("t.echo")\n5)    Play guess the number! ("t.guess")\n5)    Play Rock Paper Scissors! ("t.roshambo")\n7)    Flip the table! ("t.tableflip")\n```');
-            else:
-                commandlookup = open("Descriptions.txt","r");
-                line_string = commandlookup.readline();
-                userinput = message.content[7:]
-                flagfound = False;
-                while (line_string != ""):
-                    if(userinput.find(line_string.rstrip("\n")) != -1):
-                        description = commandlookup.readline();
-                        description = description.rstrip("\n");
-                        line_string = commandlookup.readline();
-                        flagfound = True;
-                    else:
-                        if (flagfound != True):
-                            description = "I'm sorry, but I couldn't find such a command. Could you please try again?"
-                        line_string = commandlookup.readline();
-                        line_string = commandlookup.readline();
-                await message.channel.send(description);
-                commandlookup.close();
-                
-        elif (message.content.startswith("t.")):
-            await message.channel.send("Um, sorry, but I couldn't quite understand that. Could you repeat that once more?");
-    
+#Error
     except Exception as e:
         if message.author == TPX.user:
             return;
