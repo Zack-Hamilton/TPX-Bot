@@ -36,6 +36,8 @@ def MenuFile(Text,YorN):
     pickle.dump(AddRecord,Write);
     Write.close();
 
+    await message.channel.send("Successfully Added.");
+
 #Print Menu
 def MainMenu(message):
     #Variables
