@@ -21,7 +21,7 @@ class Menu:
 
 #----------------------------------------------------------------Modules-------------------------------------------------------------------------------------------------------------------------------------------------
 #Add Command
-def MenuFile(Text,YorN):
+def AddRec(Text,YorN):
     #Variables
     global eof;
     AddRecord = Menu();
@@ -35,8 +35,6 @@ def MenuFile(Text,YorN):
     Write = open("MainMenu.dat","ab");
     pickle.dump(AddRecord,Write);
     Write.close();
-
-    await message.channel.send("Successfully Added.");
 
 #Print Menu
 def MainMenu(message):
@@ -70,6 +68,43 @@ def MainMenu(message):
         Count = Count + 1;
     Read.close();
 
+#Print Menu Admin
+def MainMenuAdmin(message):
+    #Variables
+    TempRecord = Menu();
+    global MessageArr;
+    Loop = True;
+    PrevCheck = "";
+    Count = 0;
+    
+    #File read
+    Read = open("MainMenu.dat","rb");
+    
+    #Line count
+    while Loop:
+        try:
+            TempRecord = pickle.load(Read);
+            Count = Count + 1;
+        except Exception as e:
+            Loop = False;
+
+    #Read contents
+    MessageArr = [""] * Count;
+    eof = Read.tell();
+    Read.seek(0);
+    Count = 0
+    while (Read.tell() != eof):
+        TempRecord = pickle.load(Read);
+        if (TempRecord.Available == False):
+            MessageArr[Count] = "- " + TempRecord.Content;
+            Count = Count + 1;
+    Read.close();
+
+#Reset Menu
+def MenuReset():
+    Write = open("MainMenu.dat","wb");
+    Write.close();
+
 #-----------------------------------------------------------------Code---------------------------------------------------------------------------------------------------------------------------------------------------
 @TPX.event
 async def on_ready():
@@ -83,9 +118,24 @@ async def on_message(message):
         if message.author == TPX.user:
             return;
 
+#----------Regular Commands
+        #Print Menu
+        if (message.content == "t.menu"):
+            MainMenu(message);
+            await message.channel.send("*Here's a list of available functions:*");
+            Loop = True;
+            Count = 0;
+            while Loop:
+                try:
+                    await message.channel.send(MessageArr[Count]);
+                    Count = Count + 1;
+                except Exception as e:
+                    Loop = False;
+
 #----------Admin Commands
-        #Add Menu Item
-        if (message.channel.name == "admin-centre-for-tpx"):
+        elif (message.channel.name == "admin-bot-commands"):
+            #----------Menu Commands
+            #Add Menu Item
             if (message.content == "t.menuedit"):
                 await message.channel.send("Enter Command Name:");
                 channel = message.channel;
@@ -105,21 +155,24 @@ async def on_message(message):
                     Available = True;
                 else:
                     Available = False;
-                MenuFile(ComName,Available);
-
-#----------Regular Commands
-        #Print Menu
-        elif (message.content == "t.menu"):
-            MainMenu(message);
-            await message.channel.send("*Here's a list of available functions:*");
-            Loop = True;
-            Count = 0;
-            while Loop:
-                try:
-                    await message.channel.send(MessageArr[Count]);
-                    Count = Count + 1;
-                except Exception as e:
-                    Loop = False;
+                AddRec(ComName,Available);
+                await message.channel.send("Successfully Added.");
+            #Print Admin Menu
+            elif (message.content == "t.menuadmin"):
+                MainMenuAdmin(message);
+                await message.channel.send("*Here's a list of available functions:*");
+                Loop = True;
+                Count = 0;
+                while Loop:
+                    try:
+                        await message.channel.send(MessageArr[Count]);
+                        Count = Count + 1;
+                    except Exception as e:
+                        Loop = False;
+            #Reset Menu
+            elif (message.content == "t.menureset"):
+                MenuReset();
+                await message.channel.send("Menu successfully reset.");
 
 #Error
     except Exception as e:
