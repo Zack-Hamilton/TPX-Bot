@@ -19,6 +19,9 @@ Token = Tokenread.readline();
 class Menu:
     Content = "";
     Available = False;
+class Status:
+    Content = "";
+    Type = "";
 
 #----------------------------------------------------------------Modules-------------------------------------------------------------------------------------------------------------------------------------------------
 #Add Command
@@ -85,10 +88,26 @@ def RoleCheck(message):
         else:
             return False;
 
-#Status Edit
+#Initialize
 @TPX.event
 async def on_ready():
-    await TPX.change_presence(status=discord.Status.dnd, activity=discord.Activity(type=discord.ActivityType.playing, name="Reworking bot"));
+    #File Read
+    Read = open("Status.dat","rb");
+    TempRecord = Status();
+    TempRecord = pickle.load(Read);
+    Read.close();
+
+    if TempRecord.Type == "O":
+        await TPX.change_presence(status=discord.Status.online, activity=discord.Activity(type=discord.ActivityType.playing, name=(TempRecord.Content)));
+    elif TempRecord.Type == "I":
+        await TPX.change_presence(status=discord.Status.idle, activity=discord.Activity(type=discord.ActivityType.playing, name=(TempRecord.Content)));
+    elif TempRecord.Type == "D":
+        await TPX.change_presence(status=discord.Status.dnd, activity=discord.Activity(type=discord.ActivityType.playing, name=(TempRecord.Content)));
+    elif TempRecord.Type == "N":
+        await TPX.change_presence(status=discord.Status.invisible, activity=discord.Activity(type=discord.ActivityType.playing, name=(TempRecord.Content)));
+    elif TempRecord.Type == "F":
+        await TPX.change_presence(status=discord.Status.offline, activity=discord.Activity(type=discord.ActivityType.playing, name=(TempRecord.Content)));
+
     print("Successfully loaded");
 #-----------------------------------------------------------------Code---------------------------------------------------------------------------------------------------------------------------------------------------
 
@@ -104,28 +123,57 @@ async def on_message(message):
 
 #----------Modules
         #Edit Pfp
-        async def EditPfp(args, **void):            
+        async def EditPfp(*args, **void):
+            global Loop
             # Checking Attachment
             if message.attachments:
                 url = str(message.attachments[0].url)
             # Checking Url
             elif args:
-                url = args[0:]
-            else:
-                return (f"Please input an image by URL or attachment.")
+                url = args[0]
             # Initiating Aiohttp Session
             try:
                 data = requests.get(url).content
                 await TPX.user.edit(avatar=data)
+                Loop = False;
                 return (f"Succesfully changed {TPX.user.name}'s avatar!")
             #Error
             except Exception as e:
-                if message.author == TPX.user:
-                    return;
-                await message.channel.send("An unfortunate error has occurred. If this error is reoccurring, please send details of it to my owner so that he may look into it. I apologize for the inconvenience.");
+                return ("Invalid URL or image sent. Please upload the correct URL or image.");
                 print("Error report:\n\n",repr(e));
                 print("\nTraceback report:\n\n",traceback.format_exc(), end="");
 
+        #Nickname Edit
+        async def Nickname(nickname):
+            await message.guild.me.edit(nick=nickname);
+            await message.channel.send("Successfully updated nickname.")
+
+        #Status Edit
+        async def StatusEdit(status,presence):
+            try:
+                if presence == "O":
+                    await TPX.change_presence(status=discord.Status.online, activity=discord.Activity(type=discord.ActivityType.playing, name=status));
+                elif presence == "I":
+                    await TPX.change_presence(status=discord.Status.idle, activity=discord.Activity(type=discord.ActivityType.playing, name=status));
+                elif presence == "D":
+                    await TPX.change_presence(status=discord.Status.dnd, activity=discord.Activity(type=discord.ActivityType.playing, name=status));
+                elif presence == "N":
+                    await TPX.change_presence(status=discord.Status.invisible, activity=discord.Activity(type=discord.ActivityType.playing, name=status));
+                elif presence == "F":
+                    await TPX.change_presence(status=discord.Status.offline, activity=discord.Activity(type=discord.ActivityType.playing, name=status));
+                #Write in Record
+                TempRecord = Status();
+                TempRecord.Content = status;
+                TempRecord.Type = presence;
+                #File Write
+                Write = open("Status.dat","wb");
+                pickle.dump(TempRecord,Write);
+                Write.close();
+            except:
+                 if message.author == TPX.user:
+                    await message.channel.send("An unfortunate error has occurred. If this error is reoccurring, please send details of it to my owner so that he may look into it. I apologize for the inconvenience.");
+                 print("Error report:\n\n",repr(e));
+                 print("\nTraceback report:\n\n",traceback.format_exc(), end="");
 
 #----------Regular Commands
         #Print Menu
@@ -184,13 +232,60 @@ async def on_message(message):
                 await message.channel.send("Menu successfully reset.");
             #Edit Pfp
             if (message.content.startswith("t.customize")):
-                Response = await EditPfp(message.content[12:]);
-                await message.channel.send(Response);
-                
+                #Selection
+                await message.channel.send('''What would you like to change?:
+- Profile Picture(P)
+- Nickname(N)
+- Status(S)''');
+                def check(m):
+                    return m.content != ''  and m.channel == channel;
+                Check = False;
+                while not Check:
+                    choice = (await TPX.wait_for('message',check=lambda m: m.author == message.author and m.channel == message.channel)).content;
+                    if (choice == "P") or (choice == "N") or (choice == "S"):
+                        Check = True;
+                    else:
+                        await message.channel.send("Invalid Response.");
+
+                #Profile Edit
+                if (choice == "P"):
+                    await message.channel.send("Enter URL or image:");
+                    Loop = True;
+                    while Loop:
+                        message = await TPX.wait_for('message',check=lambda m: m.author == message.author and m.channel == message.channel);
+                        if (message.content == ""):
+                            message.content = "Alpha";
+                        Response = await EditPfp(message.content);
+                        await message.channel.send(Response);
+
+                #Nickname Edit
+                elif (choice == "N"):
+                    await message.channel.send("Enter Nickname:");
+                    Nick = (await TPX.wait_for('message',check=lambda m: m.author == message.author and m.channel == message.channel)).content;
+                    await Nickname(Nick);
+
+                #Status Edit
+                elif (choice == "S"):
+                    await message.channel.send("Enter Status Name:");
+                    status = (await TPX.wait_for('message',check=lambda m: m.author == message.author and m.channel == message.channel)).content;
+                    await message.channel.send('''Enter Status Type:
+- Online(O)
+- Idle(I)
+- Do Not Disturb(D)
+- Invisible(N)
+- Offline(F)''');
+                    Check = False;
+                    while not Check:
+                        presence = (await TPX.wait_for('message',check=lambda m: m.author == message.author and m.channel == message.channel)).content;
+                        if (presence == "O") or (presence == "I") or (presence == "D") or (presence == "N") or (presence == "F"):
+                            Check = True;
+                        else:
+                            await message.channel.send("Invalid Response.");
+                    Response = await StatusEdit(status,presence);
+                    await message.channel.send("Status successfully updated.");
+
 #Error Messages
     except Exception as e:
-        if message.author == TPX.user:
-            return;
         await message.channel.send("An unfortunate error has occurred. If this error is reoccurring, please send details of it to my owner so that he may look into it. I apologize for the inconvenience.");
         print("Error report:\n\n",repr(e));
         print("\nTraceback report:\n\n",traceback.format_exc(), end="");
