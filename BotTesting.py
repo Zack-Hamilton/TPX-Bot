@@ -11,9 +11,10 @@ intents = discord.Intents.default();
 intents.members = True;
 intents.reactions = True;
 TPX = discord.Client(intents=intents);
-
 Tokenread = open("Token.txt","r");
 Token = Tokenread.readline();
+Flareread = open("FlareToken.txt","r");
+Flare = Flareread.readline();
 
 #---------------------------------------------------------------Variables------------------------------------------------------------------------------------------------------------------------------------------------
 class Menu:
@@ -184,10 +185,12 @@ async def on_message(message):
         #Info
         if (message.content == "t.info"):
             await message.channel.send(f":star:Hi there! I'm your local {message.guild.me.display_name}, here to help out with whatever you need!\nJust use t.menu to open up my commands list and see what I can do! Have fun!:grin:");
+        #Ask Bot/Webhooks
         elif(message.content.startswith("t.ask")):
             if message.content[5:] != "":
                 if "flare" in message.content:
-                    print();
+                    Webhook = discord.Webhook.from_url(Flare, adapter=discord.AsyncWebhookAdapter(TPX._connection.http._HTTPClient__session));
+                    await Webhook.send("Hi! You wanted to ask something?")
                 else:
                     await message.channel.send("You asked..." + message.content[5:] + "? I dunno, I don't have a good reponse list yet :upside_down:");                
             else:
@@ -316,9 +319,10 @@ async def on_message(message):
 #----------Otherwise
         elif (message.content.startswith("t.")):
             await message.channel.send(":confounded:I'm sorry, I'm afraid I do not understand that command. Use t.menu for a list of my available commands.");
+
 #Error Messages
     except Exception as e:
-        await message.channel.send("```An unfortunate error has occurred. If this error is reoccurring, please send details of it to my owner so that he may look into it. I apologize for the inconvenience.```");
+        #await message.channel.send("```An unfortunate error has occurred. If this error is reoccurring, please send details of it to my owner so that he may look into it. I apologize for the inconvenience.```");
         print("Error report:\n\n",repr(e));
         print("\nTraceback report:\n\n",traceback.format_exc(), end="");
 
